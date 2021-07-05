@@ -50,14 +50,13 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback, MapboxMap.OnMapCli
     private val outPoints = ArrayList<List<LatLng>>()
 
 
-    private var spinner: CustomSpinner? = null
     private var adapter: PolygonSpinnerAdapter? = null
 
     private lateinit var polygonViewModel: PolygonViewModel
 
 
     var point: Points? = null
-    var p : Points? = null
+    var p: Points? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -69,7 +68,6 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback, MapboxMap.OnMapCli
         mapView.getMapAsync(this)
 
 
-        spinner = findViewById(R.id.polygonSpinner) as CustomSpinner
 
         spinner!!.setSpinnerEventsListener(this)
 
@@ -79,13 +77,13 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback, MapboxMap.OnMapCli
         spinner!!.adapter = adapter
 
 
-        val arr= ArrayList<LatLng>()
-        arr.add(LatLng(58.87,75.68))
-        arr.add(LatLng(58.87,75.68))
-        arr.add(LatLng(58.87,75.68))
-        arr.add(LatLng(58.87,75.68))
+        val arr = ArrayList<LatLng>()
+        arr.add(LatLng(58.87, 75.68))
+        arr.add(LatLng(58.87, 75.68))
+        arr.add(LatLng(58.87, 75.68))
+        arr.add(LatLng(58.87, 75.68))
 
-         point = Points(arr)
+        point = Points(arr)
 
         val mypoly = MyPolygon("rida", point!!)
 
@@ -183,6 +181,16 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback, MapboxMap.OnMapCli
                 override fun onNothingSelected(parent: AdapterView<*>?) {}
             })
 
+
+            fab.setOnClickListener {
+
+                lineManager?.deleteAll()
+                fillManager?.deleteAll()
+                symbolManager?.deleteAll()
+
+                mesPoints.clear()
+                outPoints.clear()
+            }
         }
     }
 
@@ -243,15 +251,48 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback, MapboxMap.OnMapCli
         val currentZoom = currentCameraPosition?.zoom
 
 
+        Log.d("here", "nearOfFirstPoint zoom: $currentZoom")
+
         val dkm = getDistanceFromLatLonInKm(point0, pointEnd)
         val dm = getDistanceFromLatLonInMeter(dkm)
-        if (currentZoom?.compareTo(13.0)!! >= 0) {
 
-            if (dm < 60) near = true
-        } else {
-            if (currentZoom.compareTo(12.0)!! <= 0) {
-                if (dm < 500) near = true
-            }
+        if (currentZoom?.compareTo(16.0)!! <= 0 && currentZoom.compareTo(15.5) >= 0) {
+            if (dm < 10) near = true
+        }
+        if (currentZoom.compareTo(15.5) <= 0 && currentZoom.compareTo(15.0) >= 0) {
+            if (dm < 20) near = true
+        }
+
+        if (currentZoom.compareTo(15.0) <= 0 && currentZoom.compareTo(14.5) >= 0) {
+            if (dm < 50) near = true
+        }
+        if (currentZoom.compareTo(14.5) <= 0 && currentZoom.compareTo(14.0) >= 0) {
+            if (dm < 80) near = true
+        }
+
+        if (currentZoom.compareTo(14.0) <= 0 && currentZoom.compareTo(13.5) >= 0) {
+            if (dm < 100) near = true
+        }
+
+        if (currentZoom.compareTo(13.5) <= 0 && currentZoom.compareTo(13.0) >= 0) {
+            if (dm < 150) near = true
+        }
+
+        if (currentZoom.compareTo(13.0) <= 0 && currentZoom.compareTo(12.5) >= 0) {
+            if (dm < 300) near = true
+        }
+        if (currentZoom.compareTo(12.5) <= 0 && currentZoom.compareTo(12.0) >= 0) {
+            if (dm < 600) near = true
+        }
+        if (currentZoom.compareTo(12.0) <= 0 && currentZoom.compareTo(11.5) >= 0) {
+            if (dm < 600) near = true
+        }
+
+        if (currentZoom.compareTo(11.5) <= 0 && currentZoom.compareTo(11.0) >= 0) {
+            if (dm < 800) near = true
+        }
+        if (currentZoom.compareTo(11.0) <= 0 && currentZoom.compareTo(10.5) >= 0) {
+            if (dm < 1200) near = true
         }
 
         return near
@@ -306,7 +347,7 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback, MapboxMap.OnMapCli
                 val nameEd = view.findViewById<EditText>(R.id.namePolygonEditT)
                 val name = nameEd.text.toString()
 
-                if (name != "") {
+                if (name.isNotEmpty()) {
 
 
                     /*********************************************************************************************/
@@ -314,7 +355,7 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback, MapboxMap.OnMapCli
                     p = Points(mesPoints)
 
 
-                    val mp =MyPolygon("name", p!!)
+                    val mp = MyPolygon(name, p!!)
 
                     Log.d("aly", "ana hna mp= : $mp")
 
@@ -339,12 +380,12 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback, MapboxMap.OnMapCli
             .setNegativeButton("No") { _, _ ->
 
 
-        lineManager?.deleteAll()
-        fillManager?.deleteAll()
-        symbolManager?.deleteAll()
+                lineManager?.deleteAll()
+                fillManager?.deleteAll()
+                symbolManager?.deleteAll()
 
-        mesPoints.clear()
-        outPoints.clear()
+                mesPoints.clear()
+                outPoints.clear()
 
 
                 Toast.makeText(applicationContext, "No", Toast.LENGTH_SHORT).show()

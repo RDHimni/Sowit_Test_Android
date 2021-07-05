@@ -21,7 +21,7 @@
         mapbox:mapbox_cameraZoom="13" />
 
     <ridaz.ksk.sowit_test_android.CustomSpinner
-        android:id="@+id/polygonSpinner"
+        android:id="@+id/spinner"
         android:layout_width="0dp"
         android:layout_height="@dimen/_40sdp"
         android:layout_marginEnd="@dimen/_50sdp"
@@ -34,4 +34,20 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintVertical_bias="0" />
+
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
+        android:id="@+id/fab"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        app:backgroundTint="@color/green_200"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        android:layout_marginEnd="@dimen/_10sdp"
+        android:layout_marginBottom="@dimen/_10sdp"
+        app:layout_constraintHorizontal_bias="1"
+        app:layout_constraintVertical_bias="1"
+        android:src="@drawable/ic_edit"
+        app:tint="@android:color/white"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/spinner" />
 </androidx.constraintlayout.widget.ConstraintLayout>
