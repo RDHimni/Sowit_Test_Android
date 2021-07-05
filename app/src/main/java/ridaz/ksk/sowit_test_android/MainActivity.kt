@@ -12,6 +12,7 @@ import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.ViewModelProvider
+import com.mapbox.geojson.Point
 import com.mapbox.mapboxsdk.Mapbox
 import com.mapbox.mapboxsdk.camera.CameraPosition
 import com.mapbox.mapboxsdk.camera.CameraUpdateFactory
@@ -20,13 +21,14 @@ import com.mapbox.mapboxsdk.maps.MapboxMap
 import com.mapbox.mapboxsdk.maps.OnMapReadyCallback
 import com.mapbox.mapboxsdk.maps.Style
 import com.mapbox.mapboxsdk.plugins.annotation.*
+import com.mapbox.turf.TurfMeasurement
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.android.synthetic.main.activity_main.*
 import ridaz.ksk.sowit_test_android.adapter.PolygonSpinnerAdapter
 import ridaz.ksk.sowit_test_android.model.MyPolygon
 import ridaz.ksk.sowit_test_android.model.Points
 import ridaz.ksk.sowit_test_android.viewmodel.PolygonViewModel
-import kotlin.collections.ArrayList
+
 
 @AndroidEntryPoint
 class MainActivity : AppCompatActivity(), OnMapReadyCallback, MapboxMap.OnMapClickListener,
@@ -41,7 +43,9 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback, MapboxMap.OnMapCli
     private var fillOptions: FillOptions? = null
 
     private var symbolManager: SymbolManager? = null
+    private var symbolManagerText: SymbolManager? = null
     private var symbolOptions: SymbolOptions? = null
+    private var symbolOptionsText: SymbolOptions? = null
 
 
     private val MAKI_ICON_CIRCLE = "fire-station-15"
@@ -49,14 +53,11 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback, MapboxMap.OnMapCli
     private var mesPoints = ArrayList<LatLng>()
     private val outPoints = ArrayList<List<LatLng>>()
 
-
     private var adapter: PolygonSpinnerAdapter? = null
 
     private lateinit var polygonViewModel: PolygonViewModel
 
-
-    var point: Points? = null
-    var p: Points? = null
+    private var p: Points? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -77,20 +78,6 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback, MapboxMap.OnMapCli
         spinner!!.adapter = adapter
 
 
-        val arr = ArrayList<LatLng>()
-        arr.add(LatLng(58.87, 75.68))
-        arr.add(LatLng(58.87, 75.68))
-        arr.add(LatLng(58.87, 75.68))
-        arr.add(LatLng(58.87, 75.68))
-
-        point = Points(arr)
-
-        val mypoly = MyPolygon("rida", point!!)
-
-
-        polygonViewModel.insertPolygonInRoom(mypoly)
-
-
         polygonViewModel.readMyPolygonFromRoom.observe(this, {
             Log.d("aly", "onCreate: $it")
             if (it.isNotEmpty()) {
@@ -106,11 +93,12 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback, MapboxMap.OnMapCli
 
     override fun onMapReady(mapboxMap: MapboxMap) {
         this.mapboxMap = mapboxMap
-        mapboxMap.setStyle(Style.SATELLITE) { style: Style ->
+        mapboxMap.setStyle(Style.SATELLITE_STREETS) { style: Style ->
 
             fillManager = FillManager(mapView, mapboxMap, style)
             lineManager = LineManager(mapView, mapboxMap, style)
             symbolManager = SymbolManager(mapView, mapboxMap, style)
+            symbolManagerText = SymbolManager(mapView, mapboxMap, style)
 
             fillOptions = FillOptions()
                 .withFillColor("#e55e5e")
@@ -126,6 +114,13 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback, MapboxMap.OnMapCli
                 .withIconSize(1.0f)
                 .withDraggable(false) as SymbolOptions
 
+            val textFont = arrayOf("Open Sans Bold", "Arial Unicode MS Bold")
+            symbolOptionsText = SymbolOptions()
+                .withTextColor("#FFFFFF")
+                .withTextFont(textFont)
+                .withDraggable(false) as SymbolOptions
+
+
 
             mapboxMap.addOnMapClickListener(this)
 
@@ -134,47 +129,7 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback, MapboxMap.OnMapCli
                     parent: AdapterView<*>, view: View?, position: Int, id: Long
                 ) {
 
-                    Log.d("herep", "onItemSelected: " + parent.getItemAtPosition(position))
-                    Log.d("herep", "onItemSelected: " + adapter!!.getItem(position))
-
-
-                    lineManager?.deleteAll()
-                    fillManager?.deleteAll()
-                    symbolManager?.deleteAll()
-
-                    mesPoints.clear()
-                    outPoints.clear()
-
-                    val polygon = adapter!!.getItem(position)
-                    mesPoints.addAll(polygon.points.points)
-                    outPoints.add(mesPoints)
-
-                    for (lt in mesPoints) {
-                        symbolOptions!!.withLatLng(lt)
-                        symbolManager!!.create(symbolOptions)
-                    }
-
-
-
-                    lineOptions!!.withLatLngs(mesPoints)
-                    lineManager!!.create(lineOptions)
-
-
-                    fillOptions!!.withLatLngs(outPoints)
-                    fillManager!!.create(fillOptions)
-
-
-/////////////////////////////////////////////////////////////////////
-                    val positionCam = CameraPosition.Builder()
-                        .target(mesPoints[0])
-                        .zoom(14.0)
-                        .tilt(20.0)
-                        .build()
-                    mapboxMap.animateCamera(
-                        CameraUpdateFactory.newCameraPosition(positionCam),
-                        2000
-                    )
-
+                    goToMyPolygon(position)
 
                 }
 
@@ -182,14 +137,22 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback, MapboxMap.OnMapCli
             })
 
 
+
+
             fab.setOnClickListener {
 
                 lineManager?.deleteAll()
                 fillManager?.deleteAll()
                 symbolManager?.deleteAll()
+                symbolManagerText?.deleteAll()
 
                 mesPoints.clear()
                 outPoints.clear()
+            }
+
+            fab2.setOnClickListener {
+                val selectedItemPosition = spinner.selectedItemPosition
+                goToMyPolygon(selectedItemPosition)
             }
         }
     }
@@ -203,11 +166,7 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback, MapboxMap.OnMapCli
             symbolOptions!!.withLatLng(point)
             symbolManager!!.create(symbolOptions)
         } else {
-
-
             if (nearOfFirstPoint(mesPoints[0], point)) {
-
-
                 mesPoints.add(mesPoints[0])
                 lineOptions!!.withLatLngs(mesPoints)
                 lineManager!!.create(lineOptions)
@@ -217,14 +176,8 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback, MapboxMap.OnMapCli
                 fillOptions?.withLatLngs(outPoints)
                 fillManager!!.create(fillOptions)
 
-
                 showDialogSave()
 
-
-                val dk = getDistanceFromLatLonInKm(mesPoints[0], point)
-                Log.d("here", "distanceKm: $dk km")
-                Log.d("here", "distanceM: ${getDistanceFromLatLonInMeter(dk)} m")
-                Log.d("here", "near : ${nearOfFirstPoint(mesPoints[0], point)} ")
 
             } else {
                 mesPoints.add(point)
@@ -234,10 +187,6 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback, MapboxMap.OnMapCli
                 symbolOptions!!.withLatLng(point)
                 symbolManager!!.create(symbolOptions)
 
-                val dk = getDistanceFromLatLonInKm(mesPoints[0], point)
-                Log.d("here", "distanceKm: $dk km")
-                Log.d("here", "distanceM: ${getDistanceFromLatLonInMeter(dk)} m")
-                Log.d("here", "near : ${nearOfFirstPoint(mesPoints[0], point)} ")
             }
         }
         return true
@@ -253,10 +202,17 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback, MapboxMap.OnMapCli
 
         Log.d("here", "nearOfFirstPoint zoom: $currentZoom")
 
-        val dkm = getDistanceFromLatLonInKm(point0, pointEnd)
-        val dm = getDistanceFromLatLonInMeter(dkm)
 
-        if (currentZoom?.compareTo(16.0)!! <= 0 && currentZoom.compareTo(15.5) >= 0) {
+        val dm = TurfMeasurement.distance(
+            Point.fromLngLat(point0.longitude, point0.latitude),
+            Point.fromLngLat(pointEnd.longitude, pointEnd.latitude),
+            "metres"
+        )
+
+        if (currentZoom?.compareTo(16.0)!! >= 0) {
+            if (dm < 5) near = true
+        }
+        if (currentZoom.compareTo(16.0) <= 0 && currentZoom.compareTo(15.5) >= 0) {
             if (dm < 10) near = true
         }
         if (currentZoom.compareTo(15.5) <= 0 && currentZoom.compareTo(15.0) >= 0) {
@@ -294,36 +250,13 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback, MapboxMap.OnMapCli
         if (currentZoom.compareTo(11.0) <= 0 && currentZoom.compareTo(10.5) >= 0) {
             if (dm < 1200) near = true
         }
-
+        if (currentZoom.compareTo(10.5) <= 0 && currentZoom.compareTo(10.0) >= 0) {
+            if (dm < 1800) near = true
+        }
+        if (currentZoom.compareTo(10.0) <= 0 && currentZoom.compareTo(9.0) >= 0) {
+            if (dm < 3000) near = true
+        }
         return near
-    }
-
-    fun getDistanceFromLatLonInMeter(dkm: Double): Double = dkm * 1000
-
-
-    fun getDistanceFromLatLonInKm(point0: LatLng, pointEnd: LatLng): Double {
-
-        val lat1 = point0.latitude
-        val lon1 = point0.longitude
-
-        val lat2 = pointEnd.latitude
-        val lon2 = pointEnd.longitude
-
-        var R = 6371; // Radius of the earth in km
-        var dLat = deg2rad(lat2 - lat1)  // deg2rad below
-        var dLon = deg2rad(lon2 - lon1)
-        var a =
-            Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-                    Math.cos(deg2rad(lat1)) * Math.cos(deg2rad(lat2)) *
-                    Math.sin(dLon / 2) * Math.sin(dLon / 2)
-
-        var c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-        var d = R * c; // Distance in km
-        return d
-    }
-
-    fun deg2rad(deg: Double): Double {
-        return deg * (Math.PI / 180)
     }
 
 
@@ -367,6 +300,7 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback, MapboxMap.OnMapCli
                     lineManager?.deleteAll()
                     fillManager?.deleteAll()
                     symbolManager?.deleteAll()
+                    symbolManagerText?.deleteAll()
 
 
 
@@ -383,6 +317,7 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback, MapboxMap.OnMapCli
                 lineManager?.deleteAll()
                 fillManager?.deleteAll()
                 symbolManager?.deleteAll()
+                symbolManagerText?.deleteAll()
 
                 mesPoints.clear()
                 outPoints.clear()
@@ -432,5 +367,102 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback, MapboxMap.OnMapCli
             ContextCompat.getDrawable(applicationContext, R.drawable.bg_spinner_fruit)
     }
 
+
+    /////////////////////////////////////////////////////////////
+
+    fun goToMyPolygon(p: Int) {
+        lineManager?.deleteAll()
+        fillManager?.deleteAll()
+        symbolManager?.deleteAll()
+        symbolManagerText?.deleteAll()
+
+        mesPoints.clear()
+        outPoints.clear()
+
+        /////////////////////////////////////////////////////////////
+
+        val polygon = adapter!!.getItem(p)
+        mesPoints.addAll(polygon.points.points)
+        outPoints.add(mesPoints)
+
+        /////////////////////////////////////////////////////////////
+
+        for (lt in mesPoints) {
+            symbolOptions!!.withLatLng(lt)
+            symbolManager!!.create(symbolOptions)
+        }
+
+        /////////////////////////////////////////////////////////////
+
+        lineOptions!!.withLatLngs(mesPoints)
+        lineManager!!.create(lineOptions)
+
+        /////////////////////////////////////////////////////////////
+
+        fillOptions!!.withLatLngs(outPoints)
+        fillManager!!.create(fillOptions)
+
+        /////////////////////////////////////////////////////////////
+
+        symbolOptionsText?.withTextField(calculateAreaMyPolygon())
+        symbolOptionsText!!.withLatLng(getPointInsideFromMyPolygon())
+        symbolManagerText?.create(symbolOptionsText)
+
+        /////////////////////////////////////////////////////////////
+
+        moveCameraToMyPolygon()
+
+    }
+
+    private fun moveCameraToMyPolygon() {
+        val positionCam = CameraPosition.Builder()
+            .target(mesPoints[0])
+            .zoom(14.5)
+            .tilt(20.0)
+            .build()
+        mapboxMap?.animateCamera(
+            CameraUpdateFactory.newCameraPosition(positionCam),
+            2000
+        )
+
+    }
+
+    private fun calculateAreaMyPolygon(): String {
+        val data = fillOptions!!.geometry
+        val area = data?.let { TurfMeasurement.area(it) }
+        val areaHk = area?.div(10000)
+        val s1 = area.toString()
+        val s2 = s1.split('.')
+        val ds = s2[0]
+        val fs = s2[1].subSequence(0, 2)
+        val Sarea = ds + "." + fs + " MS"
+
+        Log.d("here", "goToMyPolygon: area = $area M*2")
+        Log.d("here", "goToMyPolygon: area = $areaHk Hk")
+        Log.d("here", "goToMyPolygon: area = $Sarea")
+
+        return Sarea
+    }
+
+    private fun getPointInsideFromMyPolygon(): LatLng {
+        val a = mesPoints[0]
+        val b = mesPoints[1]
+        val c = mesPoints[2]
+
+        val ab: LatLng
+        val abc: LatLng
+
+        var latab: Double = a.latitude + ((b.latitude - a.latitude) / 2)
+        val lngab: Double = a.longitude + ((b.longitude - a.longitude) / 2)
+
+        ab = LatLng(latab, lngab)
+
+        val latabc: Double = ab.latitude + ((c.latitude - ab.latitude) / 2)
+        val lngabc: Double = ab.longitude + ((c.longitude - ab.longitude) / 2)
+
+        abc = LatLng(latabc, lngabc)
+
+        return abc
+    }
 
 }

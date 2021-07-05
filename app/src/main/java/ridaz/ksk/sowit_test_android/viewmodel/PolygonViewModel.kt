@@ -17,10 +17,6 @@ class PolygonViewModel @Inject constructor(private val polygonRepository: Polygo
 
     val readMyPolygonFromRoom: LiveData<List<MyPolygon>>  = polygonRepository.readMyPolygonFromRoom
 
-
-
-
-
     fun insertPolygonInRoom(myPolygon: MyPolygon){
 
         Log.d("here", "insertPolygonInRoom: $myPolygon")

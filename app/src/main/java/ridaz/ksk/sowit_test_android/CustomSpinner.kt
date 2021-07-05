@@ -3,6 +3,8 @@ package ridaz.ksk.sowit_test_android
 import android.content.Context
 import android.content.res.Resources.Theme
 import android.util.AttributeSet
+import android.view.View
+import android.widget.AdapterView
 import android.widget.Spinner
 import androidx.appcompat.widget.AppCompatSpinner
 
@@ -13,6 +15,8 @@ class CustomSpinner : AppCompatSpinner {
         fun onPopupWindowOpened(spinner: Spinner?)
         fun onPopupWindowClosed(spinner: Spinner?)
     }
+
+
 
     private var mListener: OnSpinnerEventsListener? = null
     private var mOpenInitiated = false
@@ -66,6 +70,7 @@ class CustomSpinner : AppCompatSpinner {
     ) {
         mListener = onSpinnerEventsListener
     }
+
 
     /**
      * Propagate the closed Spinner event to the listener from outside if needed.
