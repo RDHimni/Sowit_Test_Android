@@ -28,6 +28,7 @@
         android:layout_marginStart="@dimen/_16sdp"
         android:layout_marginTop="@dimen/_10sdp"
         android:background="@drawable/bg_spinner_fruit"
+        android:popupBackground="@drawable/bg_spinner"
         android:dropDownVerticalOffset="@dimen/_40sdp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"

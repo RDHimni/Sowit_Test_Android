@@ -59,6 +59,8 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback, MapboxMap.OnMapCli
 
     private var p: Points? = null
 
+    //////////////////////////////onCreate//////////////////////////////////
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         Mapbox.getInstance(this, getString(R.string.mapbox_access_token))
@@ -90,6 +92,8 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback, MapboxMap.OnMapCli
 
 
     }
+
+    //////////////////////////////onMapReady//////////////////////////////////
 
     override fun onMapReady(mapboxMap: MapboxMap) {
         this.mapboxMap = mapboxMap
@@ -157,6 +161,8 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback, MapboxMap.OnMapCli
         }
     }
 
+    //////////////////////////////onMapClick//////////////////////////////////
+
     override fun onMapClick(point: LatLng): Boolean {
 
         Log.d("here", "coordinates: $point")
@@ -191,6 +197,8 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback, MapboxMap.OnMapCli
         }
         return true
     }
+
+    //////////////////////////////nearOfFirstPoint//////////////////////////////////
 
     fun nearOfFirstPoint(point0: LatLng, pointEnd: LatLng): Boolean {
 
@@ -259,7 +267,7 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback, MapboxMap.OnMapCli
         return near
     }
 
-
+    //////////////////////////////showDialogSave//////////////////////////////////
     fun showDialogSave() {
 
 
@@ -272,6 +280,7 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback, MapboxMap.OnMapCli
 
 
         dialogBuilder.setView(view)
+            .setCancelable(false)
             .setTitle("Save polygon")
             .setPositiveButton(
                 "Save"
@@ -303,12 +312,11 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback, MapboxMap.OnMapCli
                     symbolManagerText?.deleteAll()
 
 
-
-
-                    Toast.makeText(applicationContext, "Saved", Toast.LENGTH_SHORT).show()
-                    alertDialog?.dismiss()
-                } else Toast.makeText(applicationContext, "Name is messing !!", Toast.LENGTH_SHORT)
-                    .show()
+                    Toast.makeText(applicationContext, "Polygon has been Saved (°_°)", Toast.LENGTH_SHORT).show()
+                } else {
+                    Toast.makeText(applicationContext, "Name is messing !!", Toast.LENGTH_SHORT)
+                        .show()
+                }
 
             }
             .setNegativeButton("No") { _, _ ->
@@ -333,28 +341,35 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback, MapboxMap.OnMapCli
         alertDialog.show()
     }
 
-    /////////////////////////////
+    //////////////////////////////onStart//////////////////////////////////
 
     override fun onStart() {
         super.onStart()
         mapView?.onStart()
     }
 
+    //////////////////////////////onStop//////////////////////////////////
+
     override fun onStop() {
         super.onStop()
         mapView?.onStop()
     }
+
+    //////////////////////////////onLowMemory//////////////////////////////////
 
     override fun onLowMemory() {
         super.onLowMemory()
         mapView?.onLowMemory()
     }
 
+    //////////////////////////////onDestroy//////////////////////////////////
+
     override fun onDestroy() {
         super.onDestroy()
         mapView?.onDestroy()
     }
 
+    //////////////////////////////onPopupWindowOpened//////////////////////////////////
 
     override fun onPopupWindowOpened(spinner: Spinner?) {
         spinner!!.background =
@@ -362,13 +377,14 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback, MapboxMap.OnMapCli
 
     }
 
+    //////////////////////////////onPopupWindowClosed//////////////////////////////////
+
     override fun onPopupWindowClosed(spinner: Spinner?) {
         spinner!!.background =
             ContextCompat.getDrawable(applicationContext, R.drawable.bg_spinner_fruit)
     }
 
-
-    /////////////////////////////////////////////////////////////
+   //////////////////////////////goToMyPolygon//////////////////////////////////
 
     fun goToMyPolygon(p: Int) {
         lineManager?.deleteAll()
@@ -414,6 +430,8 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback, MapboxMap.OnMapCli
 
     }
 
+    //////////////////////////////moveCameraToMyPolygon//////////////////////////////////
+
     private fun moveCameraToMyPolygon() {
         val positionCam = CameraPosition.Builder()
             .target(mesPoints[0])
@@ -426,6 +444,8 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback, MapboxMap.OnMapCli
         )
 
     }
+
+    //////////////////////////////calculateAreaMyPolygon//////////////////////////////////
 
     private fun calculateAreaMyPolygon(): String {
         val data = fillOptions!!.geometry
@@ -443,6 +463,8 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback, MapboxMap.OnMapCli
 
         return Sarea
     }
+
+    //////////////////////////////getPointInsideFromMyPolygon//////////////////////////////////
 
     private fun getPointInsideFromMyPolygon(): LatLng {
         val a = mesPoints[0]
