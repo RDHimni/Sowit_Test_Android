@@ -50,7 +50,7 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback, MapboxMap.OnMapCli
     private val outPoints = ArrayList<List<LatLng>>()
 
 
-    private var spinner_fruits: CustomSpinner? = null
+    private var spinner: CustomSpinner? = null
     private var adapter: PolygonSpinnerAdapter? = null
 
     private lateinit var polygonViewModel: PolygonViewModel
@@ -58,6 +58,7 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback, MapboxMap.OnMapCli
 
     var point: Points? = null
     var p : Points? = null
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         Mapbox.getInstance(this, getString(R.string.mapbox_access_token))
@@ -68,14 +69,14 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback, MapboxMap.OnMapCli
         mapView.getMapAsync(this)
 
 
-        spinner_fruits = findViewById(R.id.polygonSpinner) as CustomSpinner
+        spinner = findViewById(R.id.polygonSpinner) as CustomSpinner
 
-        spinner_fruits!!.setSpinnerEventsListener(this)
+        spinner!!.setSpinnerEventsListener(this)
 
 
 
         adapter = PolygonSpinnerAdapter(this)
-        spinner_fruits!!.adapter = adapter
+        spinner!!.adapter = adapter
 
 
         val arr= ArrayList<LatLng>()
@@ -86,7 +87,7 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback, MapboxMap.OnMapCli
 
          point = Points(arr)
 
-        val mypoly = MyPolygon("mama", point!!)
+        val mypoly = MyPolygon("rida", point!!)
 
 
         polygonViewModel.insertPolygonInRoom(mypoly)
@@ -94,7 +95,12 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback, MapboxMap.OnMapCli
 
         polygonViewModel.readMyPolygonFromRoom.observe(this, {
             Log.d("aly", "onCreate: $it")
-            adapter!!.setData(it)
+            if (it.isNotEmpty()) {
+                mesPoints.clear()
+                outPoints.clear()
+                adapter!!.setData(it)
+
+            }
         })
 
 
@@ -125,7 +131,7 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback, MapboxMap.OnMapCli
 
             mapboxMap.addOnMapClickListener(this)
 
-            spinner_fruits!!.setOnItemSelectedListener(object : AdapterView.OnItemSelectedListener {
+            spinner!!.setOnItemSelectedListener(object : AdapterView.OnItemSelectedListener {
                 override fun onItemSelected(
                     parent: AdapterView<*>, view: View?, position: Int, id: Long
                 ) {
@@ -203,7 +209,6 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback, MapboxMap.OnMapCli
                 fillOptions?.withLatLngs(outPoints)
                 fillManager!!.create(fillOptions)
 
-                Log.d("aly", "onMapClick: $mesPoints")
 
                 showDialogSave()
 
@@ -283,7 +288,6 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback, MapboxMap.OnMapCli
 
     fun showDialogSave() {
 
-        Log.d("aly", "showDialogSave: $mesPoints")
 
         val dialogBuilder =
             AlertDialog.Builder(this, R.style.Base_ThemeOverlay_MaterialComponents_Dialog_Alert)
@@ -291,39 +295,41 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback, MapboxMap.OnMapCli
         val view = layoutInflater.inflate(R.layout.dialog_save_polygon, null)
         var alertDialog: AlertDialog? = null
 
+
+
         dialogBuilder.setView(view)
             .setTitle("Save polygon")
             .setPositiveButton(
                 "Save"
             ) { _, _ ->
-               // Log.d("here", "showDialogSave: $points")
-
-                Log.d("aly", "showDialogSave Positive: $mesPoints")
-
 
                 val nameEd = view.findViewById<EditText>(R.id.namePolygonEditT)
                 val name = nameEd.text.toString()
 
-                if (name.isNotEmpty()) {
+                if (name != "") {
+
+
+                    /*********************************************************************************************/
 
                     p = Points(mesPoints)
 
-                    Log.d("aly", "showDialogSave Positive p= : $p")
 
-                    val mp =MyPolygon(name, p!!)
+                    val mp =MyPolygon("name", p!!)
 
-                    Log.d("aly", "showDialogSave Positive mp= : $mp")
+                    Log.d("aly", "ana hna mp= : $mp")
 
 
                     polygonViewModel.insertPolygonInRoom(mp)
-                  //  polygonViewModel.insertPolygonInRoom(MyPolygon(name, point!!))
+                    /*********************************************************************************************/
+
 
                     lineManager?.deleteAll()
                     fillManager?.deleteAll()
                     symbolManager?.deleteAll()
 
-                    mesPoints.clear()
-                    outPoints.clear()
+
+
+
                     Toast.makeText(applicationContext, "Saved", Toast.LENGTH_SHORT).show()
                     alertDialog?.dismiss()
                 } else Toast.makeText(applicationContext, "Name is messing !!", Toast.LENGTH_SHORT)
@@ -333,16 +339,19 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback, MapboxMap.OnMapCli
             .setNegativeButton("No") { _, _ ->
 
 
-                lineManager?.deleteAll()
-                fillManager?.deleteAll()
-                symbolManager?.deleteAll()
+        lineManager?.deleteAll()
+        fillManager?.deleteAll()
+        symbolManager?.deleteAll()
 
-                mesPoints.clear()
-                outPoints.clear()
+        mesPoints.clear()
+        outPoints.clear()
+
 
                 Toast.makeText(applicationContext, "No", Toast.LENGTH_SHORT).show()
                 alertDialog?.dismiss()
             }
+
+
 
         alertDialog = dialogBuilder.create()
         alertDialog.show()
@@ -372,13 +381,13 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback, MapboxMap.OnMapCli
 
 
     override fun onPopupWindowOpened(spinner: Spinner?) {
-        spinner_fruits!!.background =
+        spinner!!.background =
             ContextCompat.getDrawable(applicationContext, R.drawable.bg_spinner_fruit_up)
 
     }
 
     override fun onPopupWindowClosed(spinner: Spinner?) {
-        spinner_fruits!!.background =
+        spinner!!.background =
             ContextCompat.getDrawable(applicationContext, R.drawable.bg_spinner_fruit)
     }
 
