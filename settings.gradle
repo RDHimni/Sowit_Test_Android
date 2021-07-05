@@ -1,0 +1,2 @@
+rootProject.name = "Sowit_Test_Android"
+include ':app'
